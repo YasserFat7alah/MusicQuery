@@ -1,0 +1,60 @@
+/* Query One */
+SELECT a.Name as ArtistName,
+		SUM(QT) as SongsSold,
+		SUM(total_amt) as total_USD
+FROM Album al
+JOIN Artist a 
+	ON al.ArtistId = a.ArtistId
+JOIN Track t 
+	ON al.AlbumId = t.AlbumId
+JOIN (	SELECT TrackId, SUM(Quantity) QT,
+			SUM(Quantity*UnitPrice) total_amt
+		FROM InvoiceLine 
+		GROUP BY TrackId ) i
+	ON t.TrackId = i.TrackId	
+GROUP BY a.ArtistId	
+ORDER BY total_USD DESC, SongsSold DESC
+LIMIT 5;
+
+
+/* Query Two */
+SELECT t1.Country, t1.FirstName, 
+		t1.LastName, MAX(total_paid) max_paid
+FROM
+ 	(SELECT c.Country, c.FirstName,
+			c.LastName,SUM(i.Total) total_paid
+	 FROM Customer c 
+	 JOIN Invoice i
+			ON c.CustomerId = i.CustomerId
+	 GROUP BY c.Country ,c.CustomerId
+	 ORDER BY c.Country) t1	
+ GROUP BY t1.Country ,t1.FirstName
+ORDER BY 4 DESC
+LIMIT 5;
+
+
+/* Query Three */
+SELECT t1.GenreId, t1.TrackGenre as "Track Genre",
+	  SUM(t1.Quantity) as "Times Sold"
+FROM (SELECT t.Name as TrackName , g.Name as TrackGenre,
+		    il.UnitPrice , il.Quantity, t.GenreId
+	  FROM Track t
+	  JOIN Genre g ON t.GenreId = g.GenreId
+	  JOIN InvoiceLine il ON t.TrackId = il.TrackId) t1
+GROUP BY 1
+ORDER BY 3 DESC;
+
+
+/* Query Four */
+SELECT i.CustomerId , c.FirstName , c.LastName,
+		SUM(i.Total) as TotalPaid
+FROM Invoice i
+JOIN Customer c
+ON i.CustomerId = c.CustomerId
+WHERE STRFTIME('%Y',i.InvoiceDate) = (SELECT MIN(STRFTIME('%Y',ii.InvoiceDate)) 
+										FROM Invoice ii)
+GROUP BY c.CustomerId
+ORDER BY 4 DESC										
+LIMIT 10;	
+
+
